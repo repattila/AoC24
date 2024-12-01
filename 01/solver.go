@@ -41,13 +41,27 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var result int = 0
+	var result1 int = 0
 	for i := 0; i < len(firstList); i++ {
-		result += abs(firstList[i] - secondList[i])
+		result1 += abs(firstList[i] - secondList[i])
+	}
+
+	var result2 int = 0
+	for i := 0; i < len(firstList); i++ {
+		var currVal int = firstList[i]
+		pos, found := slices.BinarySearch(secondList, currVal) // find slot
+		if found {
+			var count int = 0
+			for ; secondList[pos] == currVal; pos++ {
+				count++
+			}
+			result2 += currVal * count
+		}
 	}
 
 	fmt.Printf("%v\n", len(firstList))
-	fmt.Printf("%v\n", result)
+	fmt.Printf("%v\n", result1)
+	fmt.Printf("%v\n", result2)
 }
 
 func insert[T cmp.Ordered](ts []T, t T) []T {
