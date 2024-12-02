@@ -16,7 +16,7 @@ func main() {
 	}
 	defer file.Close()
 
-	var safe int = 0
+	var safeCount int = 0
 	scanner := bufio.NewScanner(file)
 	// optionally, resize scanner's capacity for lines over 64K, see next example
 lines:
@@ -32,8 +32,23 @@ lines:
 			}
 		}
 
-		if tryIncDec(intVals) {
-			safe += 1
+		safe, pos := tryIncDec(intVals)
+		if safe {
+			safeCount += 1
+		} else {
+			if pos != -1 {
+				intValsDampened := removeIndex(intVals, pos)
+				safe, _ = tryIncDec(intValsDampened)
+				if safe {
+					safeCount += 1
+				} else {
+					intValsDampened = removeIndex(intVals, pos-1)
+					safe, _ := tryIncDec(intValsDampened)
+					if safe {
+						safeCount += 1
+					}
+				}
+			}
 		}
 
 	}
@@ -42,22 +57,44 @@ lines:
 		log.Fatal(err)
 	}
 
-	fmt.Printf("%v\n", safe)
+	fmt.Printf("%v\n", safeCount)
 }
 
-func tryIncDec(vals []int) bool {
-	if isSafe(vals, true) {
-		return true
-	} else {
-		return isSafe(vals, false)
-	}
-}
-
-func isSafe(vals []int, inc bool) bool {
-	var res bool = true
+func tryIncDec(vals []int) (bool, int) {
 	var prevVal int = vals[0]
-	for i := 1; i < len(vals); i++ {
-		var currVal int = vals[i]
+	var eqCount int = 0
+	var incCount int = 0
+	var currVal int
+	for i := 1; i < 4; i++ {
+		currVal = vals[i]
+
+		if currVal == prevVal {
+			eqCount += 1
+		} else if currVal > prevVal {
+			incCount += 1
+		}
+
+		prevVal = currVal
+	}
+
+	var inc bool
+	if eqCount > 1 {
+		return false, -1
+	} else if incCount > 1 {
+		inc = true
+	} else {
+		inc = false
+	}
+
+	return isSafe(vals, inc)
+}
+
+func isSafe(vals []int, inc bool) (bool, int) {
+	var res bool = true
+	var pos int = 1
+	var prevVal int = vals[0]
+	for ; pos < len(vals); pos++ {
+		var currVal int = vals[pos]
 
 		if inc {
 			if currVal <= prevVal || currVal-prevVal > 3 {
@@ -73,5 +110,11 @@ func isSafe(vals []int, inc bool) bool {
 
 		prevVal = currVal
 	}
-	return res
+	return res, pos
+}
+
+func removeIndex(s []int, index int) []int {
+	ret := make([]int, 0)
+	ret = append(ret, s[:index]...)
+	return append(ret, s[index+1:]...)
 }
