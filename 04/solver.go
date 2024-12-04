@@ -22,13 +22,16 @@ func main() {
 		words = append(words, []rune(line))
 	}
 
-	var res int = 0
+	var res1 int = 0
+	var res2 int = 0
 	for r := 0; r < len(words); r++ {
 		row := words[r]
 		for c := 0; c < len(row); c++ {
 			if row[c] == 'X' {
-				res += countXMAS(r, c, words)
+				res1 += countXMAS(r, c, words)
 			}
+
+			res2 += countCMAS(r, c, words)
 		}
 	}
 
@@ -36,7 +39,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(res)
+	fmt.Println(res1)
+	fmt.Println(res2)
 }
 
 func countXMAS(r int, c int, words [][]rune) int {
@@ -131,5 +135,19 @@ func countXMAS(r int, c int, words [][]rune) int {
 		}
 	}
 
+	return res
+}
+
+func countCMAS(r int, c int, words [][]rune) int {
+	var res int = 0
+	if r > 0 && c > 0 && r < len(words)-1 && c < len(words[0])-1 {
+		if words[r][c] == 'A' {
+			if (words[r-1][c-1] == 'M' && words[r+1][c+1] == 'S') || (words[r-1][c-1] == 'S' && words[r+1][c+1] == 'M') {
+				if (words[r+1][c-1] == 'M' && words[r-1][c+1] == 'S') || (words[r+1][c-1] == 'S' && words[r-1][c+1] == 'M') {
+					res++
+				}
+			}
+		}
+	}
 	return res
 }
