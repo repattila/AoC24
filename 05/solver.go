@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -34,7 +35,11 @@ func main() {
 		}
 	}
 
-	var res int
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	var res1 int
 updatesLoop:
 	for _, update := range updates {
 		for i := 0; i < len(update)-1; i++ {
@@ -43,13 +48,27 @@ updatesLoop:
 			}
 		}
 
-		i, _ := strconv.Atoi(update[len(update)/2])
-		res += i
+		intVal, _ := strconv.Atoi(update[len(update)/2])
+		res1 += intVal
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+	var res2 int
+	for _, update := range updates {
+		for i := 0; i < len(update)-1; i++ {
+			if _, ok := rules[update[i]+"|"+update[i+1]]; !ok {
+				slices.SortFunc(update, func(a, b string) int {
+					if _, ok := rules[a+"|"+b]; ok {
+						return -1
+					} else {
+						return 1
+					}
+				})
+				intVal, _ := strconv.Atoi(update[len(update)/2])
+				res2 += intVal
+			}
+		}
 	}
 
-	fmt.Printf("%d\n", res)
+	fmt.Printf("%d\n", res1)
+	fmt.Printf("%d\n", res2)
 }
