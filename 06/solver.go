@@ -20,7 +20,7 @@ func main() {
 	defer file.Close()
 
 	var lab [][]bool = make([][]bool, 0)
-	var visited map[pos]bool = make(map[pos]bool)
+	var visited map[pos]int = make(map[pos]int)
 	var guardPos pos
 	var guardDir int
 	var r int = 0
@@ -57,14 +57,28 @@ func main() {
 		r++
 	}
 
-	fmt.Println(lab)
-	fmt.Println(guardPos)
 	fmt.Println(followGuardPath(guardPos, guardDir, visited, lab))
+
+	var loopCount int = 0
+	i := 0
+	for k := range visited {
+		if i != 0 {
+			var visitedLC map[pos]int = make(map[pos]int)
+			lab[k.row][k.col] = true
+			if hasLoop(guardPos, guardDir, visitedLC, lab) {
+				loopCount++
+			}
+			lab[k.row][k.col] = false
+		}
+
+		i++
+	}
+
+	fmt.Println(loopCount)
 }
 
-func followGuardPath(p pos, dir int, visited map[pos]bool, lab [][]bool) int {
+func getNextPos(p pos, dir int) pos {
 	var nextPos pos
-
 	switch dir {
 	case 0:
 		nextPos = pos{p.row - 1, p.col}
@@ -75,14 +89,36 @@ func followGuardPath(p pos, dir int, visited map[pos]bool, lab [][]bool) int {
 	case 3:
 		nextPos = pos{p.row, p.col - 1}
 	}
+	return nextPos
+}
+
+func followGuardPath(p pos, dir int, visited map[pos]int, lab [][]bool) int {
+	var nextPos pos = getNextPos(p, dir)
 
 	if nextPos.row < 0 || nextPos.col < 0 || nextPos.row >= len(lab) || nextPos.col >= len(lab[0]) {
 		return len(visited) + 1
 	} else if !lab[nextPos.row][nextPos.col] {
-		visited[p] = true
+		visited[p] = 1
 		return followGuardPath(nextPos, dir, visited, lab)
 	} else {
 		return followGuardPath(p, (dir+1)%4, visited, lab)
 	}
+}
 
+func hasLoop(p pos, dir int, visited map[pos]int, lab [][]bool) bool {
+	var nextPos pos = getNextPos(p, dir)
+
+	if nextPos.row < 0 || nextPos.col < 0 || nextPos.row >= len(lab) || nextPos.col >= len(lab[0]) {
+		return false
+	} else if !lab[nextPos.row][nextPos.col] {
+		d, ok := visited[p]
+		if ok && d == dir {
+			return true
+		} else {
+			visited[p] = dir
+			return hasLoop(nextPos, dir, visited, lab)
+		}
+	} else {
+		return hasLoop(p, (dir+1)%4, visited, lab)
+	}
 }
