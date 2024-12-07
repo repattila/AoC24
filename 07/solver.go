@@ -32,12 +32,12 @@ func main() {
 
 		fmt.Printf("%d %v\n", testVal, operands)
 
-		// Operators represented as binary number where 1 is + and 0 is *
-		// 4 = b100 : +**
+		// Operators represented as a base 3 number where 2 is ||, 1 is + and 0 is *
+		// 11 = 102 : +*||
 		var opCount int = len(operands) - 1
-		for opsInt := int64(math.Pow(2, float64(opCount))) - 1; opsInt >= 0; opsInt-- {
-			// Convert to binary format string
-			opsString := strconv.FormatInt(opsInt, 2)
+		for opsInt := int64(math.Pow(3, float64(opCount))) - 1; opsInt >= 0; opsInt-- {
+			// Convert to base 3 format string
+			opsString := strconv.FormatInt(opsInt, 3)
 			// Leftpad with zeros
 			opsString = fmt.Sprintf("%0*s", opCount, opsString)
 
@@ -70,10 +70,13 @@ func evalEq(operands []string, operators []rune) int {
 			return -1
 		}
 
-		if operators[i-1] == '0' {
+		operator := operators[i-1]
+		if operator == '0' {
 			res *= operand
-		} else {
+		} else if operator == '1' {
 			res += operand
+		} else {
+			res, _ = strconv.Atoi(fmt.Sprintf("%d%d", res, operand))
 		}
 	}
 
