@@ -53,13 +53,9 @@ func main() {
 
 					for i, a1 := range sameFreqAs {
 						for j := i + 1; j < len(sameFreqAs); j++ {
-							anti1, anti2 := getAntinodes(a1, sameFreqAs[j])
-
-							if anti1.isValid(len(antinodes), len(antinodes[0])) {
-								antinodes[anti1.row][anti1.col] = true
-							}
-							if anti2.isValid(len(antinodes), len(antinodes[0])) {
-								antinodes[anti2.row][anti2.col] = true
+							antisPos := getAntinodes(a1, sameFreqAs[j], len(antinodes), len(antinodes[0]))
+							for _, antiPos := range antisPos {
+								antinodes[antiPos.row][antiPos.col] = true
 							}
 						}
 					}
@@ -96,7 +92,7 @@ func getSameFreqAs(freq rune, antennas [][]rune) []pos {
 	return res
 }
 
-func getAntinodes(a1 pos, a2 pos) (pos, pos) {
+func getAntinodes1(a1 pos, a2 pos) (pos, pos) {
 	var res1 pos
 	var res2 pos
 
@@ -136,6 +132,87 @@ func getAntinodes(a1 pos, a2 pos) (pos, pos) {
 	}
 
 	return res1, res2
+}
+
+func getAntinodes(a1 pos, a2 pos, maxRow int, maxCol int) []pos {
+	var res []pos = make([]pos, 0)
+
+	rDiff := abs(a1.row - a2.row)
+	cDiff := abs(a1.col - a2.col)
+
+	if a1.row == a2.row {
+		for anti := a1; anti.isValid(maxRow, maxCol); {
+			res = append(res, anti)
+
+			anti = pos{anti.row, anti.col + cDiff}
+		}
+		for anti := a1; anti.isValid(maxRow, maxCol); {
+			res = append(res, anti)
+
+			anti = pos{anti.row, anti.col - cDiff}
+		}
+	} else if a1.col == a2.col {
+		for anti := a1; anti.isValid(maxRow, maxCol); {
+			res = append(res, anti)
+
+			anti = pos{anti.row + rDiff, anti.col}
+		}
+		for anti := a1; anti.isValid(maxRow, maxCol); {
+			res = append(res, anti)
+
+			anti = pos{anti.row - rDiff, anti.col}
+		}
+	} else if a1.row < a2.row {
+		if a1.col < a2.col {
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row + rDiff, anti.col + cDiff}
+			}
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row - rDiff, anti.col - cDiff}
+			}
+		} else {
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row - rDiff, anti.col + cDiff}
+			}
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row + rDiff, anti.col - cDiff}
+			}
+		}
+	} else {
+		if a1.col < a2.col {
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row - rDiff, anti.col + cDiff}
+			}
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row + rDiff, anti.col - cDiff}
+			}
+		} else {
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row + rDiff, anti.col + cDiff}
+			}
+			for anti := a1; anti.isValid(maxRow, maxCol); {
+				res = append(res, anti)
+
+				anti = pos{anti.row - rDiff, anti.col - cDiff}
+			}
+		}
+	}
+
+	return res
 }
 
 func abs(i int) int {
