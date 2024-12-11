@@ -46,42 +46,35 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var firstStone *stone
-	var currStone *stone
+	var stones []int = make([]int, 0)
 	for _, s := range splitLine {
 		i, _ := strconv.Atoi(s)
-		newStone := stone{i, nil}
-		if currStone != nil {
-			currStone.nextStone = &newStone
-		}
-		currStone = &newStone
-
-		if firstStone == nil {
-			firstStone = currStone
-		}
+        stones = append(stones, i)
 	}
 
-	for i := range 75 {
-		for s := firstStone; s != nil; {
-			if s.engraving == 0 {
-				s.engraving = 1
-				s = s.nextStone
-			} else if s.needSplit() {
-				s.split()
-				s = s.nextStone.nextStone
-			} else {
-				s.engraving = s.engraving * 2024
-				s = s.nextStone
-			}
-		}
+    var res int
+    for _, e := range stones {
+        var firstStone stone = stone{e, nil}
+        for i := range 75 {
+            for s := &firstStone; s != nil; {
+                if s.engraving == 0 {
+                    s.engraving = 1
+                    s = s.nextStone
+                } else if s.needSplit() {
+                    s.split()
+                    s = s.nextStone.nextStone
+                } else {
+                    s.engraving = s.engraving * 2024
+                    s = s.nextStone
+                }
+            }
 
-		fmt.Println(i)
-	}
-
-	var res int
-	for s := firstStone; s != nil; s = s.nextStone {
-		res++
-	}
+            fmt.Println(i)
+        }
+        for s := &firstStone; s != nil; s = s.nextStone {
+            res++
+        }
+    }
 
 	fmt.Printf("%v\n", res)
 }
