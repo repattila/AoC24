@@ -9,27 +9,6 @@ import (
 	"strings"
 )
 
-type stone struct {
-	engraving int
-	nextStone *stone
-}
-
-func (s *stone) needSplit() bool {
-	engString := strconv.FormatInt(int64(s.engraving), 10)
-	return len(engString)%2 == 0
-}
-
-func (s *stone) split() {
-	currEngraving := strconv.FormatInt(int64(s.engraving), 10)
-	newEngraving, _ := strconv.Atoi(currEngraving[:len(currEngraving)/2])
-	s.engraving = newEngraving
-
-	newEngraving, _ = strconv.Atoi(currEngraving[len(currEngraving)/2:])
-	newStone := stone{newEngraving, s.nextStone}
-
-	s.nextStone = &newStone
-}
-
 func main() {
 	file, err := os.Open("input.txt")
 	if err != nil {
@@ -46,35 +25,34 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var stones []int = make([]int, 0)
+	var stones []int = make([]int, 0, 80028872400)
 	for _, s := range splitLine {
 		i, _ := strconv.Atoi(s)
-        stones = append(stones, i)
+		stones = append(stones, i)
 	}
 
-    var res int
-    for _, e := range stones {
-        var firstStone stone = stone{e, nil}
-        for i := range 75 {
-            for s := &firstStone; s != nil; {
-                if s.engraving == 0 {
-                    s.engraving = 1
-                    s = s.nextStone
-                } else if s.needSplit() {
-                    s.split()
-                    s = s.nextStone.nextStone
-                } else {
-                    s.engraving = s.engraving * 2024
-                    s = s.nextStone
-                }
-            }
+	for i := range 25 {
+		var newStones []int = make([]int, 0)
+		for j, s := range stones {
+			if s == 0 {
+				stones[j] = 1
+			} else {
+				engString := strconv.FormatInt(int64(s), 10)
+				if len(engString)%2 == 0 {
+					newEngraving, _ := strconv.Atoi(engString[:len(engString)/2])
+					newStones = append(newStones, newEngraving)
 
-            fmt.Println(i)
-        }
-        for s := &firstStone; s != nil; s = s.nextStone {
-            res++
-        }
-    }
+					newEngraving, _ = strconv.Atoi(engString[len(engString)/2:])
+					stones[j] = newEngraving
+				} else {
+					stones[j] = s * 2024
+				}
+			}
+		}
 
-	fmt.Printf("%v\n", res)
+		stones = append(stones, newStones...)
+		fmt.Println(i)
+	}
+
+	fmt.Printf("%v\n", len(stones))
 }
