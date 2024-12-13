@@ -45,9 +45,36 @@ func main() {
 		}
 	}
 
+	var res int
+	for _, region := range regions {
+		var regionId rune = field[region[0].row][region[0].col]
+
+		var fenceNum int
+		for _, cell := range region {
+			r := cell.row
+			c := cell.col
+
+			if r == 0 || field[r-1][c] != regionId {
+				fenceNum += 1
+			}
+			if r == len(field)-1 || field[r+1][c] != regionId {
+				fenceNum += 1
+			}
+			if c == 0 || field[r][c-1] != regionId {
+				fenceNum += 1
+			}
+			if c == len(field[r])-1 || field[r][c+1] != regionId {
+				fenceNum += 1
+			}
+		}
+
+		res += fenceNum * len(region)
+	}
+
 	fmt.Printf("%v\n", field)
 	fmt.Printf("%v\n", used)
 	fmt.Printf("%v\n", regions)
+	fmt.Printf("%v\n", res)
 }
 
 func traceRegion(r int, c int, regionId rune, field [][]rune, used [][]bool, elems []pos) []pos {
