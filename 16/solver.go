@@ -132,9 +132,6 @@ func main() {
 			}
 		}
 
-		fmt.Printf("%v\n", updatedRoutes)
-		fmt.Printf("%v\n", finishedRoutes)
-
 		if len(updatedRoutes) != 0 {
 			routes = updatedRoutes
 		} else {
@@ -143,17 +140,28 @@ func main() {
 	}
 
 	var minCost int = finishedRoutes[0].cost
-	var minCostRouteIndex int
-	for i, r := range finishedRoutes {
+	for _, r := range finishedRoutes {
 		if r.cost < minCost {
 			minCost = r.cost
-			minCostRouteIndex = i
 		}
 	}
 
-	fmt.Println()
-	fmt.Printf("%v\n", finishedRoutes[minCostRouteIndex])
+	var bestRoutesCount int
+	var stepsOnBestRoutes map[pos]bool = make(map[pos]bool)
+	for _, r := range finishedRoutes {
+		if r.cost == minCost {
+			fmt.Printf("%v\n", r)
+			bestRoutesCount++
+
+			for _, s := range r.steps {
+				stepsOnBestRoutes[s] = true
+			}
+		}
+	}
+
 	fmt.Println(minCost)
+	fmt.Println(bestRoutesCount)
+	fmt.Println(len(stepsOnBestRoutes))
 }
 
 func stepVisited(step pos, r route) bool {
