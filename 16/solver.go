@@ -12,6 +12,11 @@ type pos struct {
 	c int
 }
 
+type posdir struct {
+	p   pos
+	dir int
+}
+
 type route struct {
 	dir   int
 	cost  int
@@ -57,12 +62,21 @@ func main() {
 	fmt.Printf("%v\n", field)
 	fmt.Printf("%v\n", routes)
 
+	var minCostAtPosDir map[posdir]int = make(map[posdir]int)
 	var finishedRoutes []route = make([]route, 0)
 	for true {
 		var updatedRoutes []route = make([]route, 0, len(routes))
 
 		for _, r := range routes {
 			var currPos pos = r.steps[len(r.steps)-1]
+
+			minCost, ok := minCostAtPosDir[posdir{currPos, r.dir}]
+			if ok && minCost < r.cost {
+				continue
+			} else {
+				minCostAtPosDir[posdir{currPos, r.dir}] = r.cost
+			}
+
 			if field[currPos.r][currPos.c] == 2 {
 				finishedRoutes = append(finishedRoutes, r)
 				continue
@@ -128,7 +142,18 @@ func main() {
 		}
 	}
 
-	fmt.Printf("%v\n", finishedRoutes)
+	var minCost int = finishedRoutes[0].cost
+	var minCostRouteIndex int
+	for i, r := range finishedRoutes {
+		if r.cost < minCost {
+			minCost = r.cost
+			minCostRouteIndex = i
+		}
+	}
+
+	fmt.Println()
+	fmt.Printf("%v\n", finishedRoutes[minCostRouteIndex])
+	fmt.Println(minCost)
 }
 
 func stepVisited(step pos, r route) bool {
