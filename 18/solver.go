@@ -33,27 +33,43 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	// optionally, resize scanner's capacity for lines over 64K, see next example
 	for scanner.Scan() {
-		if b == 1024 {
-			break
-		}
-
 		var x, y int
 		fmt.Sscanf(scanner.Text(), "%d,%d", &x, &y)
 		field[y][x] = 1
 
 		b++
+
+		if b > 1024 {
+			reachable, minSteps := exitReachable(field)
+			if reachable {
+				fmt.Printf("%d: %d\n", b, minSteps)
+			} else {
+				fmt.Printf("%d: %d,%d\n", b, x, y)
+				break
+			}
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+}
 
+func processNextPos(nextPos pos, nextLen int, field [][]int, minStepsAtPos map[pos]int, updatedRoutes []route) []route {
+	if field[nextPos.r][nextPos.c] != 1 {
+		minSteps, ok := minStepsAtPos[nextPos]
+		if !ok || minSteps > nextLen {
+			minStepsAtPos[nextPos] = nextLen
+			return append(updatedRoutes, route{nextPos, nextLen})
+		}
+	}
+
+	return updatedRoutes
+}
+
+func exitReachable(field [][]int) (bool, int) {
 	var routes []route = make([]route, 0)
 	routes = append(routes, route{pos{0, 0}, 0})
-
-	fmt.Printf("%v\n", field)
-	fmt.Printf("%v\n", routes)
-
 	var minStepsAtPos map[pos]int = make(map[pos]int)
 	for true {
 		var updatedRoutes []route = make([]route, 0, len(routes))
@@ -90,8 +106,6 @@ func main() {
 			}
 		}
 
-		fmt.Printf("%v\n", updatedRoutes)
-
 		if len(updatedRoutes) != 0 {
 			routes = updatedRoutes
 		} else {
@@ -99,17 +113,6 @@ func main() {
 		}
 	}
 
-	fmt.Println(minStepsAtPos[pos{70, 70}])
-}
-
-func processNextPos(nextPos pos, nextLen int, field [][]int, minStepsAtPos map[pos]int, updatedRoutes []route) []route {
-	if field[nextPos.r][nextPos.c] != 1 {
-		minSteps, ok := minStepsAtPos[nextPos]
-		if !ok || minSteps > nextLen {
-			minStepsAtPos[nextPos] = nextLen
-			return append(updatedRoutes, route{nextPos, nextLen})
-		}
-	}
-
-	return updatedRoutes
+	minSteps, ok := minStepsAtPos[pos{70, 70}]
+	return ok, minSteps
 }
