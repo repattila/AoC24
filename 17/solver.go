@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -17,7 +16,7 @@ func main() {
 	}
 	defer file.Close()
 
-	var reg map[rune]int = make(map[rune]int)
+	var reg []int = make([]int, 3)
 	var program []int = make([]int, 0)
 
 	scanner := bufio.NewScanner(file)
@@ -27,7 +26,14 @@ func main() {
 		var regVal int
 		var regAddr rune
 		fmt.Sscanf(scanner.Text(), "Register %c: %d", &regAddr, &regVal)
-		reg[regAddr] = regVal
+		switch regAddr {
+		case 'A':
+			reg[0] = regVal
+		case 'B':
+			reg[1] = regVal
+		case 'C':
+			reg[2] = regVal
+		}
 	}
 
 	scanner.Scan()
@@ -49,50 +55,40 @@ func main() {
 	fmt.Printf("%v\n", reg)
 	fmt.Printf("%v\n", program)
 
-	var output []int = make([]int, 0)
-	var progCounter int
-	for progCounter < len(program) {
-		var inst int = program[progCounter]
-		var op int = program[progCounter+1]
+	var output []int = make([]int, len(program))
 
-		switch inst {
-		case 0:
-			reg['A'] = reg['A'] / int(math.Pow(2, float64(getComboVal(op, reg))))
-			progCounter += 2
-		case 1:
-			reg['B'] = reg['B'] ^ op
-			progCounter += 2
-		case 2:
-			reg['B'] = getComboVal(op, reg) % 8
-			progCounter += 2
-		case 3:
-			if reg['A'] == 0 {
-				progCounter += 2
-			} else {
-				progCounter = op
+	runProgram(program, reg, output)
+
+	fmt.Printf("%v\n", output)
+
+	var dynReg []int = make([]int, 3)
+	for i := 1; true; i++ {
+		dynReg[0] = i
+		dynReg[1] = reg[1]
+		dynReg[2] = reg[2]
+
+		if !runProgram(program, dynReg, output) {
+			continue
+		}
+
+		var isSame bool = true
+		for j := len(output) - 1; j >= 0; j-- {
+			if program[j] != output[j] {
+				isSame = false
+				break
 			}
-		case 4:
-			reg['B'] = reg['B'] ^ reg['C']
-			progCounter += 2
-		case 5:
-			output = append(output, getComboVal(op, reg)%8)
-			progCounter += 2
-		case 6:
-			reg['B'] = reg['A'] / int(math.Pow(2, float64(getComboVal(op, reg))))
-			progCounter += 2
-		case 7:
-			reg['C'] = reg['A'] / int(math.Pow(2, float64(getComboVal(op, reg))))
-			progCounter += 2
+		}
+
+		if isSame {
+			fmt.Println(i)
+			break
+		} else if i%100000 == 0 {
+			fmt.Println(i)
 		}
 	}
-
-	for _, out := range output {
-		fmt.Printf("%d,", out)
-	}
-	fmt.Printf("\n")
 }
 
-func getComboVal(val int, reg map[rune]int) int {
+func getComboVal(val int, reg []int) int {
 	var res int
 
 	if val < 4 {
@@ -100,15 +96,65 @@ func getComboVal(val int, reg map[rune]int) int {
 	} else {
 		switch val {
 		case 4:
-			res = reg['A']
+			res = reg[0]
 		case 5:
-			res = reg['B']
+			res = reg[1]
 		case 6:
-			res = reg['C']
+			res = reg[2]
 		default:
 			log.Fatal("Unexpected val!")
 		}
 	}
 
 	return res
+}
+
+func runProgram(program []int, reg []int, output []int) bool {
+	for j := range len(output) {
+		output[j] = -1
+	}
+
+	var currOut int
+	var progCounter int
+
+	for progCounter < len(program) {
+		var inst int = program[progCounter]
+		var op int = program[progCounter+1]
+
+		switch inst {
+		case 0:
+			reg[0] = reg[0] / (1 << getComboVal(op, reg))
+			progCounter += 2
+		case 1:
+			reg[1] = reg[1] ^ op
+			progCounter += 2
+		case 2:
+			reg[1] = getComboVal(op, reg) % 8
+			progCounter += 2
+		case 3:
+			if reg[0] == 0 {
+				progCounter += 2
+			} else {
+				progCounter = op
+			}
+		case 4:
+			reg[1] = reg[1] ^ reg[2]
+			progCounter += 2
+		case 5:
+			if currOut == len(output) {
+				return false
+			}
+			output[currOut] = getComboVal(op, reg) % 8
+			currOut++
+			progCounter += 2
+		case 6:
+			reg[1] = reg[0] / (1 << getComboVal(op, reg))
+			progCounter += 2
+		case 7:
+			reg[2] = reg[0] / (1 << getComboVal(op, reg))
+			progCounter += 2
+		}
+	}
+
+	return true
 }
