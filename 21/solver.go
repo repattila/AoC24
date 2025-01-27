@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 )
 
 type pos struct {
@@ -14,7 +13,7 @@ type pos struct {
 }
 
 func main() {
-	file, err := os.Open("example1.txt")
+	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,6 +30,10 @@ func main() {
 		for _, r := range codeVal {
 			var p pos
 
+			//7, 8, 9
+			//4, 5, 6
+			//1, 2, 3
+			// , 0, A
 			switch r {
 			case 'A':
 				p = pos{3, 2}
@@ -69,78 +72,111 @@ func main() {
 
 	fmt.Printf("%v\n", codeVals)
 	fmt.Printf("%v\n", codes)
+	fmt.Printf("\n")
 
 	var res int
-	for i, code := range codes {
-		var inst []rune = make([]rune, 0)
+	for _, code := range codes {
+		var routeOptions [][]route = make([][]route, 0, len(code))
 		// A
 		var currPos pos = pos{3, 2}
-		var colDone bool = false
 		for _, p := range code {
 			rDiff := currPos.row - p.row
 			cDiff := currPos.col - p.col
 
+			var verticalMove rune
+			var horizontalMove rune
 			if rDiff > 0 {
-				for range rDiff {
-					inst = append(inst, '^')
-				}
-			} else if rDiff < 0 {
-				if currPos.col == 0 {
-					if cDiff < 0 {
-						for range -1 * cDiff {
-							inst = append(inst, '>')
-						}
-						colDone = true
-					}
-				}
-
-				for range -1 * rDiff {
-					inst = append(inst, 'v')
-				}
+				verticalMove = '^'
+			} else {
+				verticalMove = 'v'
+				rDiff = -1 * rDiff
 			}
 
-			if !colDone {
-				if cDiff < 0 {
-					for range -1 * cDiff {
-						inst = append(inst, '>')
-					}
-				} else if cDiff > 0 {
-					for range cDiff {
-						inst = append(inst, '<')
-					}
-				}
+			if cDiff < 0 {
+				horizontalMove = '>'
+				cDiff = -1 * cDiff
+			} else {
+				horizontalMove = '<'
 			}
 
-			inst = append(inst, 'A')
+			routeOptions = append(routeOptions, getRoutes(verticalMove, horizontalMove, []route{route{cDiff, rDiff, make([]rune, 0)}}))
+
 			currPos = p
-			colDone = false
 		}
 
-		for _, r := range inst {
-			fmt.Printf("%c", r)
+		fmt.Printf("%v\n", routeOptions)
+
+		var inst1stLevel [][]rune = make([][]rune, 1)
+		inst1stLevel[0] = make([]rune, 0)
+
+		for _, routes := range routeOptions {
+			var newInst1stLevel [][]rune = make([][]rune, 0)
+			for _, inst := range inst1stLevel {
+				for _, route := range routes {
+					newInst1stLevel = append(newInst1stLevel, append(inst, route.steps...))
+				}
+			}
+			inst1stLevel = newInst1stLevel
 		}
+
+		fmt.Printf("%v\n", inst1stLevel)
+
+		var validInst [][]rune = make([][]rune, 0)
+	instLoop:
+		for _, inst := range inst1stLevel {
+			var currPos pos = pos{3, 2}
+			for _, step := range inst {
+				switch step {
+				case '<':
+					currPos.col -= 1
+				case '>':
+					currPos.col += 1
+				case '^':
+					currPos.row -= 1
+				case 'v':
+					currPos.row += 1
+				}
+
+				if currPos.row == 3 && currPos.col == 0 {
+					continue instLoop
+				}
+			}
+
+			validInst = append(validInst, inst)
+		}
+
+		inst1stLevel = validInst
+
+		fmt.Printf("%v\n", inst1stLevel)
 		fmt.Printf("\n")
 
-		var instAsPos []pos = getInstAsPos(inst)
-		var inst2ndLevel []rune = getInst2ndLevel(instAsPos)
+		/*
+			for _, r := range inst {
+				fmt.Printf("%c", r)
+			}
+			fmt.Printf("\n")
 
-		for _, r := range inst2ndLevel {
-			fmt.Printf("%c", r)
-		}
-		fmt.Printf("\n")
+			var instAsPos []pos = getInstAsPos(inst)
+			var inst2ndLevel []rune = getInst2ndLevel(instAsPos)
 
-		instAsPos = getInstAsPos(inst2ndLevel)
-		var inst3rdLevel []rune = getInst2ndLevel(instAsPos)
+			for _, r := range inst2ndLevel {
+				fmt.Printf("%c", r)
+			}
+			fmt.Printf("\n")
 
-		for _, r := range inst3rdLevel {
-			fmt.Printf("%c", r)
-		}
-		fmt.Printf("\n")
+			instAsPos = getInstAsPos(inst2ndLevel)
+			var inst3rdLevel []rune = getInst2ndLevel(instAsPos)
 
-		val, _ := strconv.Atoi(codeVals[i][:len(codeVals[i])-1])
-		fmt.Printf("%d * %d\n", val, len(inst3rdLevel))
+			for _, r := range inst3rdLevel {
+				fmt.Printf("%c", r)
+			}
+			fmt.Printf("\n")
 
-		res += val * len(inst3rdLevel)
+			val, _ := strconv.Atoi(codeVals[i][:len(codeVals[i])-1])
+			fmt.Printf("%d * %d\n", val, len(inst3rdLevel))
+
+			res += val * len(inst3rdLevel)
+		*/
 	}
 
 	fmt.Println(res)
@@ -210,4 +246,73 @@ func getInst2ndLevel(inst []pos) []rune {
 		colDone = false
 	}
 	return res
+}
+
+type route struct {
+	horizontalStepsRemaining int
+	verticalStepsRemaining   int
+	steps                    []rune
+}
+
+func (r *route) addStep(step rune, isVertical bool) {
+	newSteps := make([]rune, 0, len(r.steps)+1)
+	newSteps = append(newSteps, r.steps...)
+	newSteps = append(newSteps, step)
+	r.steps = newSteps
+
+	if isVertical {
+		r.verticalStepsRemaining -= 1
+	} else {
+		r.horizontalStepsRemaining -= 1
+	}
+}
+
+func (r *route) copyStepsAndAdd(from route, step rune, isVertical bool) {
+	newSteps := make([]rune, 0, len(from.steps)+1)
+	newSteps = append(newSteps, from.steps...)
+	newSteps = append(newSteps, step)
+	r.steps = newSteps
+
+	if isVertical {
+		r.verticalStepsRemaining = from.verticalStepsRemaining - 1
+		r.horizontalStepsRemaining = from.horizontalStepsRemaining
+	} else {
+		r.verticalStepsRemaining = from.verticalStepsRemaining
+		r.horizontalStepsRemaining = from.horizontalStepsRemaining - 1
+	}
+}
+
+func getRoutes(verticalMove rune, horizontalMove rune, routes []route) []route {
+	var newRoutes []route = make([]route, 0)
+	var added bool = false
+
+	for _, r := range routes {
+		if r.horizontalStepsRemaining == 0 && r.verticalStepsRemaining == 0 {
+			newRoutes = append(newRoutes, r)
+		} else if r.horizontalStepsRemaining > 0 && r.verticalStepsRemaining > 0 {
+			var newRoute route = route{}
+			newRoute.copyStepsAndAdd(r, horizontalMove, false)
+			newRoutes = append(newRoutes, newRoute)
+			r.addStep(verticalMove, true)
+			newRoutes = append(newRoutes, r)
+
+			added = true
+		} else if r.horizontalStepsRemaining > 0 {
+			r.addStep(horizontalMove, false)
+			newRoutes = append(newRoutes, r)
+
+			added = true
+		} else {
+			r.addStep(verticalMove, true)
+			newRoutes = append(newRoutes, r)
+
+			added = true
+		}
+	}
+
+	if !added {
+		return routes
+	} else {
+		return getRoutes(verticalMove, horizontalMove, newRoutes)
+	}
 }
