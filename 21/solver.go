@@ -76,48 +76,13 @@ func main() {
 
 	var res int
 	for _, code := range codes {
-		var routeOptions [][]route = make([][]route, 0, len(code))
 		// A
 		var currPos pos = pos{3, 2}
-		for _, p := range code {
-			rDiff := currPos.row - p.row
-			cDiff := currPos.col - p.col
+		var routeOptionsByCodePos [][]route = getRouteOptions(currPos, code)
 
-			var verticalMove rune
-			var horizontalMove rune
-			if rDiff > 0 {
-				verticalMove = '^'
-			} else {
-				verticalMove = 'v'
-				rDiff = -1 * rDiff
-			}
+		fmt.Printf("%v\n", routeOptionsByCodePos)
 
-			if cDiff < 0 {
-				horizontalMove = '>'
-				cDiff = -1 * cDiff
-			} else {
-				horizontalMove = '<'
-			}
-
-			routeOptions = append(routeOptions, getRoutes(verticalMove, horizontalMove, []route{route{cDiff, rDiff, make([]rune, 0)}}))
-
-			currPos = p
-		}
-
-		fmt.Printf("%v\n", routeOptions)
-
-		var inst1stLevel [][]rune = make([][]rune, 1)
-		inst1stLevel[0] = make([]rune, 0)
-
-		for _, routes := range routeOptions {
-			var newInst1stLevel [][]rune = make([][]rune, 0)
-			for _, inst := range inst1stLevel {
-				for _, route := range routes {
-					newInst1stLevel = append(newInst1stLevel, append(inst, route.steps...))
-				}
-			}
-			inst1stLevel = newInst1stLevel
-		}
+		var inst1stLevel [][]rune = getInstructions(routeOptionsByCodePos)
 
 		fmt.Printf("%v\n", inst1stLevel)
 
@@ -135,6 +100,7 @@ func main() {
 					currPos.row -= 1
 				case 'v':
 					currPos.row += 1
+				case 'A':
 				}
 
 				if currPos.row == 3 && currPos.col == 0 {
@@ -148,6 +114,24 @@ func main() {
 		inst1stLevel = validInst
 
 		fmt.Printf("%v\n", inst1stLevel)
+		fmt.Printf("\n")
+
+		var inst2ndLevel [][]rune = make([][]rune, 0)
+		for _, inst := range inst1stLevel {
+			var instAsPos []pos = getInstAsPos(inst)
+			fmt.Printf("%v\n", instAsPos)
+
+			var routeOptionsByInst [][]route = getRouteOptions(currPos, instAsPos)
+
+			fmt.Printf("%v\n", routeOptionsByInst)
+
+			var inst2ndLevelBy1stLevelInst [][]rune = getInstructions(routeOptionsByCodePos)
+
+			fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
+
+			inst2ndLevel = append(inst2ndLevel, inst2ndLevelBy1stLevelInst...)
+			fmt.Printf("\n")
+		}
 		fmt.Printf("\n")
 
 		/*
@@ -180,6 +164,57 @@ func main() {
 	}
 
 	fmt.Println(res)
+}
+
+// Returns the possible sequences of characters that need to be pressed on the keypad
+// The return value is a list of lists, representing the options of character sequences
+// Uses the previously determined possible routes between the characters of the code
+func getInstructions(routeOptionsByCodePos [][]route) [][]rune {
+	var instructions [][]rune = make([][]rune, 1)
+	instructions[0] = make([]rune, 0)
+
+	// Generate all possible sequences of routes on the keypad between the characters of the code
+	// After appending the steps of a route between two codepoints, always add the 'A' character
+	for _, routeOptions := range routeOptionsByCodePos {
+		var newInstructions [][]rune = make([][]rune, 0)
+		for _, inst := range instructions {
+			for _, route := range routeOptions {
+				newInstructions = append(newInstructions, append(append(inst, route.steps...), 'A'))
+			}
+		}
+		instructions = newInstructions
+	}
+
+	return instructions
+}
+
+func getRouteOptions(currPos pos, code []pos) [][]route {
+	var routeOptionsByCodePos [][]route = make([][]route, 0, len(code))
+	for _, p := range code {
+		rDiff := currPos.row - p.row
+		cDiff := currPos.col - p.col
+
+		var verticalMove rune
+		var horizontalMove rune
+		if rDiff > 0 {
+			verticalMove = '^'
+		} else {
+			verticalMove = 'v'
+			rDiff = -1 * rDiff
+		}
+
+		if cDiff < 0 {
+			horizontalMove = '>'
+			cDiff = -1 * cDiff
+		} else {
+			horizontalMove = '<'
+		}
+
+		routeOptionsByCodePos = append(routeOptionsByCodePos, getRoutes(verticalMove, horizontalMove, []route{route{cDiff, rDiff, make([]rune, 0)}}))
+
+		currPos = p
+	}
+	return routeOptionsByCodePos
 }
 
 func getInstAsPos(inst []rune) []pos {
