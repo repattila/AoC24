@@ -76,56 +76,40 @@ func main() {
 
 	var res int
 	for _, code := range codes {
+		fmt.Printf("%v\n", code)
+
 		// A
 		var currPos pos = pos{3, 2}
 		var routeOptionsByCodePos [][]route = getRouteOptions(currPos, code)
 
-		fmt.Printf("%v\n", routeOptionsByCodePos)
+		printRouteOptions(routeOptionsByCodePos)
 
 		var inst1stLevel [][]rune = getInstructions(routeOptionsByCodePos)
 
 		fmt.Printf("%v\n", inst1stLevel)
 
-		var validInst [][]rune = make([][]rune, 0)
-	instLoop:
-		for _, inst := range inst1stLevel {
-			var currPos pos = pos{3, 2}
-			for _, step := range inst {
-				switch step {
-				case '<':
-					currPos.col -= 1
-				case '>':
-					currPos.col += 1
-				case '^':
-					currPos.row -= 1
-				case 'v':
-					currPos.row += 1
-				case 'A':
-				}
-
-				if currPos.row == 3 && currPos.col == 0 {
-					continue instLoop
-				}
-			}
-
-			validInst = append(validInst, inst)
-		}
-
-		inst1stLevel = validInst
+		inst1stLevel = getValidInst1stLevel(inst1stLevel)
 
 		fmt.Printf("%v\n", inst1stLevel)
 		fmt.Printf("\n")
 
 		var inst2ndLevel [][]rune = make([][]rune, 0)
-		for _, inst := range inst1stLevel {
-			var instAsPos []pos = getInstAsPos(inst)
+		for i, inst := range inst1stLevel {
+			fmt.Printf("2nd level, instruction: %d\n", i)
+			var instAsPos []pos = getInstAsPos2ndLevel(inst)
 			fmt.Printf("%v\n", instAsPos)
 
+			// A
+			var currPos pos = pos{0, 2}
 			var routeOptionsByInst [][]route = getRouteOptions(currPos, instAsPos)
 
-			fmt.Printf("%v\n", routeOptionsByInst)
+			printRouteOptions(routeOptionsByInst)
 
-			var inst2ndLevelBy1stLevelInst [][]rune = getInstructions(routeOptionsByCodePos)
+			var inst2ndLevelBy1stLevelInst [][]rune = getInstructions(routeOptionsByInst)
+
+			fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
+
+			inst2ndLevelBy1stLevelInst = getValidInst2ndLevel(inst2ndLevelBy1stLevelInst)
 
 			fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
 
@@ -133,6 +117,30 @@ func main() {
 			fmt.Printf("\n")
 		}
 		fmt.Printf("\n")
+
+		var inst3rdLevel [][]rune = make([][]rune, 0)
+		for i, inst := range inst2ndLevel {
+			fmt.Printf("3rd level, instruction: %d\n", i)
+			var instAsPos []pos = getInstAsPos2ndLevel(inst)
+			fmt.Printf("%v\n", instAsPos)
+
+			// A
+			var currPos pos = pos{0, 2}
+			var routeOptionsByInst [][]route = getRouteOptions(currPos, instAsPos)
+
+			printRouteOptions(routeOptionsByInst)
+
+			var inst3rdLevelBy2ndLevelInst [][]rune = getInstructions(routeOptionsByInst)
+
+			fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
+
+			inst3rdLevelBy2ndLevelInst = getValidInst2ndLevel(inst3rdLevelBy2ndLevelInst)
+
+			fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
+
+			inst3rdLevel = append(inst3rdLevel, inst3rdLevelBy2ndLevelInst...)
+			fmt.Printf("\n")
+		}
 
 		/*
 			for _, r := range inst {
@@ -217,9 +225,11 @@ func getRouteOptions(currPos pos, code []pos) [][]route {
 	return routeOptionsByCodePos
 }
 
-func getInstAsPos(inst []rune) []pos {
+func getInstAsPos2ndLevel(inst []rune) []pos {
 	var res []pos = make([]pos, 0)
 	for _, r := range inst {
+		// , ^, A
+		// <, v, >
 		switch r {
 		case 'A':
 			res = append(res, pos{0, 2})
@@ -283,6 +293,62 @@ func getInst2ndLevel(inst []pos) []rune {
 	return res
 }
 
+func getValidInst1stLevel(instructions [][]rune) [][]rune {
+	var validInst [][]rune = make([][]rune, 0)
+instLoop:
+	for _, inst := range instructions {
+		var currPos pos = pos{3, 2}
+		for _, step := range inst {
+			switch step {
+			case '<':
+				currPos.col -= 1
+			case '>':
+				currPos.col += 1
+			case '^':
+				currPos.row -= 1
+			case 'v':
+				currPos.row += 1
+			case 'A':
+			}
+
+			if currPos.row == 3 && currPos.col == 0 {
+				continue instLoop
+			}
+		}
+
+		validInst = append(validInst, inst)
+	}
+	return validInst
+}
+
+func getValidInst2ndLevel(instructions [][]rune) [][]rune {
+	var validInst [][]rune = make([][]rune, 0)
+instLoop:
+	for _, inst := range instructions {
+		var currPos pos = pos{0, 2}
+		for _, step := range inst {
+			switch step {
+			case '<':
+				currPos.col -= 1
+			case '>':
+				currPos.col += 1
+			case '^':
+				currPos.row -= 1
+			case 'v':
+				currPos.row += 1
+			case 'A':
+			}
+
+			if currPos.row == 0 && currPos.col == 0 {
+				continue instLoop
+			}
+		}
+
+		validInst = append(validInst, inst)
+	}
+	return validInst
+}
+
 type route struct {
 	horizontalStepsRemaining int
 	verticalStepsRemaining   int
@@ -314,6 +380,23 @@ func (r *route) copyStepsAndAdd(from route, step rune, isVertical bool) {
 	} else {
 		r.verticalStepsRemaining = from.verticalStepsRemaining
 		r.horizontalStepsRemaining = from.horizontalStepsRemaining - 1
+	}
+}
+
+func (r route) String() string {
+	var result string
+	for _, s := range r.steps {
+		result = result + fmt.Sprintf("%c", s)
+	}
+	return result
+}
+
+func printRouteOptions(routeOptions [][]route) {
+	for _, ro := range routeOptions {
+		for _, r := range ro {
+			fmt.Printf("%v ", r)
+		}
+		fmt.Printf("\n")
 	}
 }
 
