@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 )
 
 type pos struct {
@@ -75,7 +76,7 @@ func main() {
 	fmt.Printf("\n")
 
 	var res int
-	for _, code := range codes {
+	for i, code := range codes {
 		fmt.Printf("%v\n", code)
 
 		// A
@@ -107,11 +108,11 @@ func main() {
 
 			var inst2ndLevelBy1stLevelInst [][]rune = getInstructions(routeOptionsByInst)
 
-			fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
+			//fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
 
 			inst2ndLevelBy1stLevelInst = getValidInst2ndLevel(inst2ndLevelBy1stLevelInst)
 
-			fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
+			//fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
 
 			inst2ndLevel = append(inst2ndLevel, inst2ndLevelBy1stLevelInst...)
 			fmt.Printf("\n")
@@ -132,43 +133,27 @@ func main() {
 
 			var inst3rdLevelBy2ndLevelInst [][]rune = getInstructions(routeOptionsByInst)
 
-			fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
+			//fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
 
 			inst3rdLevelBy2ndLevelInst = getValidInst2ndLevel(inst3rdLevelBy2ndLevelInst)
 
-			fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
+			//fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
 
 			inst3rdLevel = append(inst3rdLevel, inst3rdLevelBy2ndLevelInst...)
 			fmt.Printf("\n")
 		}
 
-		/*
-			for _, r := range inst {
-				fmt.Printf("%c", r)
+		var minLen int = len(inst3rdLevel[0])
+		for _, inst := range inst3rdLevel {
+			if len(inst) < minLen {
+				minLen = len(inst)
 			}
-			fmt.Printf("\n")
+		}
 
-			var instAsPos []pos = getInstAsPos(inst)
-			var inst2ndLevel []rune = getInst2ndLevel(instAsPos)
+		val, _ := strconv.Atoi(codeVals[i][:len(codeVals[i])-1])
+		fmt.Printf("%d * %d\n", val, minLen)
 
-			for _, r := range inst2ndLevel {
-				fmt.Printf("%c", r)
-			}
-			fmt.Printf("\n")
-
-			instAsPos = getInstAsPos(inst2ndLevel)
-			var inst3rdLevel []rune = getInst2ndLevel(instAsPos)
-
-			for _, r := range inst3rdLevel {
-				fmt.Printf("%c", r)
-			}
-			fmt.Printf("\n")
-
-			val, _ := strconv.Atoi(codeVals[i][:len(codeVals[i])-1])
-			fmt.Printf("%d * %d\n", val, len(inst3rdLevel))
-
-			res += val * len(inst3rdLevel)
-		*/
+		res += val * len(inst3rdLevel)
 	}
 
 	fmt.Println(res)
@@ -186,8 +171,14 @@ func getInstructions(routeOptionsByCodePos [][]route) [][]rune {
 	for _, routeOptions := range routeOptionsByCodePos {
 		var newInstructions [][]rune = make([][]rune, 0)
 		for _, inst := range instructions {
-			for _, route := range routeOptions {
-				newInstructions = append(newInstructions, append(append(inst, route.steps...), 'A'))
+			if len(routeOptions) == 0 {
+				newInstructions = append(newInstructions, append(inst, 'A'))
+			} else {
+				for _, ro := range routeOptions {
+					var newInst []rune = make([]rune, 0, len(inst)+len(ro.steps)+1)
+					newInst = append(append(append(newInst, inst...), ro.steps...), 'A')
+					newInstructions = append(newInstructions, newInst)
+				}
 			}
 		}
 		instructions = newInstructions
