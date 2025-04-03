@@ -153,7 +153,7 @@ func main() {
 		val, _ := strconv.Atoi(codeVals[i][:len(codeVals[i])-1])
 		fmt.Printf("%d * %d\n", val, minLen)
 
-		res += val * len(inst3rdLevel)
+		res += val * minLen
 	}
 
 	fmt.Println(res)
