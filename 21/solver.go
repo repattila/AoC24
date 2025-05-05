@@ -81,15 +81,11 @@ func main() {
 
 		// A
 		var currPos pos = pos{3, 2}
-		var routeOptionsByCodePos [][]route = getRouteOptions(currPos, code)
+		var routeOptionsByCodePos [][]route = getRouteOptions(currPos, pos{3, 0}, code)
 
 		printRouteOptions(routeOptionsByCodePos)
 
 		var inst1stLevel [][]rune = getInstructions(routeOptionsByCodePos)
-
-		fmt.Printf("%v\n", inst1stLevel)
-
-		inst1stLevel = getValidInst1stLevel(inst1stLevel)
 
 		fmt.Printf("%v\n", inst1stLevel)
 		fmt.Printf("\n")
@@ -102,19 +98,14 @@ func main() {
 
 			// A
 			var currPos pos = pos{0, 2}
-			var routeOptionsByInst [][]route = getRouteOptions(currPos, instAsPos)
+			var routeOptionsByInst [][]route = getRouteOptions(currPos, pos{0, 0}, instAsPos)
 
 			printRouteOptions(routeOptionsByInst)
 
 			var inst2ndLevelBy1stLevelInst [][]rune = getInstructions(routeOptionsByInst)
-
-			//fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
-
-			inst2ndLevelBy1stLevelInst = getValidInst2ndLevel(inst2ndLevelBy1stLevelInst)
-
-			//fmt.Printf("%v\n", inst2ndLevelBy1stLevelInst)
-
 			inst2ndLevel = append(inst2ndLevel, inst2ndLevelBy1stLevelInst...)
+
+			//fmt.Printf("%v\n", inst2ndLevel)
 			fmt.Printf("\n")
 		}
 		fmt.Printf("\n")
@@ -127,19 +118,14 @@ func main() {
 
 			// A
 			var currPos pos = pos{0, 2}
-			var routeOptionsByInst [][]route = getRouteOptions(currPos, instAsPos)
+			var routeOptionsByInst [][]route = getRouteOptions(currPos, pos{0, 0}, instAsPos)
 
 			printRouteOptions(routeOptionsByInst)
 
 			var inst3rdLevelBy2ndLevelInst [][]rune = getInstructions(routeOptionsByInst)
-
-			//fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
-
-			inst3rdLevelBy2ndLevelInst = getValidInst2ndLevel(inst3rdLevelBy2ndLevelInst)
-
-			//fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
-
 			inst3rdLevel = append(inst3rdLevel, inst3rdLevelBy2ndLevelInst...)
+
+			//fmt.Printf("%v\n", inst3rdLevelBy2ndLevelInst)
 			fmt.Printf("\n")
 		}
 
@@ -187,7 +173,7 @@ func getInstructions(routeOptionsByCodePos [][]route) [][]rune {
 	return instructions
 }
 
-func getRouteOptions(currPos pos, code []pos) [][]route {
+func getRouteOptions(currPos pos, blockedPos pos, code []pos) [][]route {
 	var routeOptionsByCodePos [][]route = make([][]route, 0, len(code))
 	for _, p := range code {
 		rDiff := currPos.row - p.row
@@ -209,7 +195,7 @@ func getRouteOptions(currPos pos, code []pos) [][]route {
 			horizontalMove = '<'
 		}
 
-		routeOptionsByCodePos = append(routeOptionsByCodePos, getRoutes(verticalMove, horizontalMove, []route{route{cDiff, rDiff, make([]rune, 0)}}))
+		routeOptionsByCodePos = append(routeOptionsByCodePos, getRoutes(verticalMove, horizontalMove, blockedPos, []route{route{currPos, p, currPos, cDiff, rDiff, make([]rune, 0)}}))
 
 		currPos = p
 	}
@@ -341,6 +327,9 @@ instLoop:
 }
 
 type route struct {
+	from                     pos
+	to                       pos
+	curr                     pos
 	horizontalStepsRemaining int
 	verticalStepsRemaining   int
 	steps                    []rune
@@ -391,37 +380,71 @@ func printRouteOptions(routeOptions [][]route) {
 	}
 }
 
-func getRoutes(verticalMove rune, horizontalMove rune, routes []route) []route {
+func (r *route) advanceCurrPos(move rune, blockedPos pos) bool {
+	var newPos pos
+	switch move {
+	case '<':
+		newPos = pos{r.curr.row, r.curr.col - 1}
+	case '>':
+		newPos = pos{r.curr.row, r.curr.col + 1}
+	case '^':
+		newPos = pos{r.curr.row - 1, r.curr.col}
+	case 'v':
+		newPos = pos{r.curr.row + 1, r.curr.col}
+	}
+	if newPos != blockedPos {
+		r.curr = newPos
+
+		return true
+	} else {
+		return false
+	}
+}
+
+func getRoutes(verticalMove rune, horizontalMove rune, blockedPos pos, routes []route) []route {
 	var newRoutes []route = make([]route, 0)
-	var added bool = false
+	var changed bool = false
 
 	for _, r := range routes {
 		if r.horizontalStepsRemaining == 0 && r.verticalStepsRemaining == 0 {
 			newRoutes = append(newRoutes, r)
 		} else if r.horizontalStepsRemaining > 0 && r.verticalStepsRemaining > 0 {
 			var newRoute route = route{}
-			newRoute.copyStepsAndAdd(r, horizontalMove, false)
-			newRoutes = append(newRoutes, newRoute)
-			r.addStep(verticalMove, true)
-			newRoutes = append(newRoutes, r)
+			newRoute.from = r.from
+			newRoute.to = r.to
+			newRoute.curr = r.curr
 
-			added = true
+			if newRoute.advanceCurrPos(horizontalMove, blockedPos) {
+				newRoute.copyStepsAndAdd(r, horizontalMove, false)
+				newRoutes = append(newRoutes, newRoute)
+			}
+
+			if r.advanceCurrPos(verticalMove, blockedPos) {
+				r.addStep(verticalMove, true)
+				newRoutes = append(newRoutes, r)
+			}
+
+			changed = true
 		} else if r.horizontalStepsRemaining > 0 {
-			r.addStep(horizontalMove, false)
-			newRoutes = append(newRoutes, r)
+			if r.advanceCurrPos(horizontalMove, blockedPos) {
+				r.addStep(horizontalMove, false)
+				newRoutes = append(newRoutes, r)
+			}
 
-			added = true
+			changed = true
 		} else {
-			r.addStep(verticalMove, true)
-			newRoutes = append(newRoutes, r)
+			if r.advanceCurrPos(verticalMove, blockedPos) {
+				r.addStep(verticalMove, true)
+				newRoutes = append(newRoutes, r)
+			}
 
-			added = true
+			changed = true
 		}
 	}
 
-	if !added {
+	if !changed {
 		return routes
 	} else {
-		return getRoutes(verticalMove, horizontalMove, newRoutes)
+		return getRoutes(verticalMove, horizontalMove, blockedPos, newRoutes)
 	}
 }
