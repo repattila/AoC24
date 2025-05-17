@@ -1,36 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
 func main() {
-	file, err := os.Open("input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	// optionally, resize scanner's capacity for lines over 64K, see next example
-	scanner.Scan()
-	splitLine := strings.Split(scanner.Text(), " ")
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	var stones []int = make([]int, 0, 80028872400)
-	for _, s := range splitLine {
-		i, _ := strconv.Atoi(s)
-		stones = append(stones, i)
-	}
 
 	lenGeneratedFrom0 := map[int]int{
 		0:  1,
@@ -75,13 +51,19 @@ func main() {
 		39: 10174278,
 	}
 
+	var stones []int = make([]int, 0, 80028872400)
+	stones = append(stones, 0)
+
 	start := time.Now()
 
-	var stepNum int = 25
+	fmt.Printf("map[string]int{\n")
+
+	var stepNum int = 40
 	var lenFrom0s int = 0
 
 	for i := range stepNum {
-		for j, s := range stones {
+		for j := range len(stones) {
+			var s int = stones[j]
 			if s == -1 {
 				// skip
 			} else if s == 0 {
@@ -107,20 +89,17 @@ func main() {
 			}
 		}
 
-		fmt.Println(i)
-	}
-
-	lenStones := 0
-	for _, s := range stones {
-		if s != -1 {
-			lenStones += 1
+		lenStones := 0
+		for _, s := range stones {
+			if s != -1 {
+				lenStones += 1
+			}
 		}
+
+		fmt.Printf("%v: %v,\n", i, lenStones+lenFrom0s)
 	}
 
-	fmt.Printf("%v\n", len(stones))
-	fmt.Printf("%v\n", lenStones)
-	fmt.Printf("%v\n", lenFrom0s)
-	fmt.Printf("%v\n", lenStones+lenFrom0s)
+	fmt.Printf("}\n")
 
 	elapsed := time.Since(start)
 	fmt.Printf("Elapsed time: %v\n", elapsed)
