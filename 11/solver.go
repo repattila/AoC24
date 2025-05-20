@@ -32,66 +32,69 @@ func main() {
 		stones = append(stones, i)
 	}
 
-	lenGeneratedFrom0 := map[int]int{
-		0:  1,
-		1:  1,
-		2:  2,
-		3:  4,
-		4:  4,
-		5:  7,
-		6:  14,
-		7:  16,
-		8:  20,
-		9:  39,
-		10: 62,
-		11: 81,
-		12: 110,
-		13: 200,
-		14: 328,
-		15: 418,
-		16: 667,
-		17: 1059,
-		18: 1546,
-		19: 2377,
-		20: 3572,
-		21: 5602,
-		22: 8268,
-		23: 12343,
-		24: 19778,
-		25: 29165,
-		26: 43726,
-		27: 67724,
-		28: 102131,
-		29: 156451,
-		30: 234511,
-		31: 357632,
-		32: 549949,
-		33: 819967,
-		34: 1258125,
-		35: 1916299,
-		36: 2886408,
-		37: 4414216,
-		38: 6669768,
-		39: 10174278,
-	}
-
 	start := time.Now()
 
-	var stepNum int = 25
-	var lenFrom0s int = 0
+	var lenGeneratedFromDigit map[int]map[int]int = make(map[int]map[int]int)
+	var maxDigit int = 10
+	for n := range maxDigit {
+		var lenGeneratedFromCurr map[int]int = make(map[int]int)
+		var stonesFromDigit []int = make([]int, 0, 1000000)
+		stonesFromDigit = append(stonesFromDigit, n)
+
+		for i := range 40 {
+			for j := range len(stonesFromDigit) {
+				var s int = stonesFromDigit[j]
+				if s == 0 {
+					stonesFromDigit[j] = 1
+				} else {
+					engString := strconv.FormatInt(int64(s), 10)
+					if len(engString)%2 == 0 {
+						newEngraving, _ := strconv.Atoi(engString[:len(engString)/2])
+						stonesFromDigit = append(stonesFromDigit, newEngraving)
+
+						newEngraving, _ = strconv.Atoi(engString[len(engString)/2:])
+						stonesFromDigit[j] = newEngraving
+					} else {
+						stonesFromDigit[j] = s * 2024
+					}
+				}
+			}
+
+			lenGeneratedFromCurr[i] = len(stonesFromDigit)
+		}
+
+		lenGeneratedFromDigit[n] = lenGeneratedFromCurr
+
+		fmt.Printf("Digit done:%v\n", n)
+	}
+
+	var stepNum int = 75
+	var lenFromSkipped int = 0
 
 	for i := range stepNum {
 		for j, s := range stones {
 			if s == -1 {
-				// skip
-			} else if s == 0 {
-				generatedLen, ok := lenGeneratedFrom0[stepNum-1-i]
+				// ignore
+			} else if s < maxDigit {
+				var skipped bool = false
+				lengeneratedFromDigit, ok1 := lenGeneratedFromDigit[s]
+				if ok1 {
+					generatedLen, ok2 := lengeneratedFromDigit[stepNum-1-i]
 
-				if ok {
-					lenFrom0s += generatedLen
-					stones[j] = -1
-				} else {
-					stones[j] = 1
+					if ok2 {
+						lenFromSkipped += generatedLen
+						stones[j] = -1
+
+						skipped = true
+					}
+				}
+
+				if !skipped {
+					if s == 0 {
+						stones[j] = 1
+					} else {
+						stones[j] = s * 2024
+					}
 				}
 			} else {
 				engString := strconv.FormatInt(int64(s), 10)
@@ -119,8 +122,8 @@ func main() {
 
 	fmt.Printf("%v\n", len(stones))
 	fmt.Printf("%v\n", lenStones)
-	fmt.Printf("%v\n", lenFrom0s)
-	fmt.Printf("%v\n", lenStones+lenFrom0s)
+	fmt.Printf("%v\n", lenFromSkipped)
+	fmt.Printf("%v\n", lenStones+lenFromSkipped)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Elapsed time: %v\n", elapsed)
