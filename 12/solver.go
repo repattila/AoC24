@@ -53,7 +53,7 @@ func (s VSide) Swap(i, j int) {
 }
 
 func main() {
-	file, err := os.Open("test4.txt")
+	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,7 +108,8 @@ func main() {
 			if r == len(field)-1 || field[r+1][c] != regionId {
 				fenceNum += 1
 
-				horizontalSides = append(horizontalSides, pos{r + 1, c})
+				// This needs to be shifted by len(field) so upper and lower sides are not on the same row (test4)
+				horizontalSides = append(horizontalSides, pos{r + 1 + len(field), c})
 			}
 			if c == 0 || field[r][c-1] != regionId {
 				fenceNum += 1
@@ -118,7 +119,8 @@ func main() {
 			if c == len(field[r])-1 || field[r][c+1] != regionId {
 				fenceNum += 1
 
-				verticalSides = append(verticalSides, pos{r, c + 1})
+				// This needs to be shifted by len(field[r]) so left and right sides are not on the same row (test4)
+				verticalSides = append(verticalSides, pos{r, c + 1 + len(field[r])})
 			}
 		}
 
